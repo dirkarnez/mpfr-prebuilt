@@ -23,7 +23,7 @@ jobs:
         
       - name: try aria2 
         shell: cmd
-        run: aria2c "https://github.com/dirkarnez/gmp-prebuilt/releases/download/v6.2.1/gmp-v6.2.1-x86_64-posix-seh-rev0-8.1.0.zip" && 7z.exe x gmp-v6.2.1-x86_64-posix-seh-rev0-8.1.0.zip -o "gmp-v6.2.1-x86_64-posix-seh-rev0-8.1.0"
+        run: aria2c "https://github.com/dirkarnez/gmp-prebuilt/releases/download/v6.2.1/gmp-v6.2.1-x86_64-posix-seh-rev0-8.1.0.zip" && 7z.exe x gmp-v6.2.1-x86_64-posix-seh-rev0-8.1.0.zip -o${{ github.workspace }}\gmp-v6.2.1-x86_64-posix-seh-rev0-8.1.0
         
       - name: Install MSYS2
         uses: msys2/setup-msys2@v2
