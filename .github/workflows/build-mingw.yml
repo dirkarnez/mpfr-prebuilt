@@ -9,17 +9,21 @@ on:
 jobs:
   build:
     name: Create Release
-    runs-on: windows-2019
+    runs-on: windows-latest
     env:
       libraryName: mpfr
       installationPath: mpfr-installation
-      mingwTargetZip: mpfr-${{ github.ref_name }}-x86_64-posix-seh-rev0-8.1.0.zip
+      mingwTargetZip: mpfr-${{ github.ref_name }}-mingw64-x86_64-posix-seh-rev0-8.1.0.zip
     steps:
       - uses: actions/checkout@v3
       
       - name: try aria2 
         shell: cmd
-        run: aria2c "https://www.mpfr.org/mpfr-current/mpfr-4.1.0.zip" && 7z.exe x mpfr-4.1.0.zip
+        run: aria2c "https://www.mpfr.org/mpfr-current/mpfr-4.2.0.zip" && 7z.exe x mpfr-4.2.0.zip
+
+      - name: rename mpfr_version to mpfr
+        shell: cmd
+        run: rename mpfr-4.2.0 mpfr
         
       - name: try aria2 
         shell: cmd
@@ -33,8 +37,10 @@ jobs:
           
       - name: curl x86_64-8.1.0-release-posix-seh-rt_v6-rev0.7z
         shell: cmd
-        run:  cd /d ${{ github.workspace }} && curl https://github.com/2641797006/c/blob/master/GCC-zip/x86_64-8.1.0-release-posix-seh-rt_v6-rev0.7z?raw=true -L --output x86_64-8.1.0-release-posix-seh-rt_v6-rev0.7z && dir && 7z.exe x x86_64-8.1.0-release-posix-seh-rt_v6-rev0.7z
-        
+        run: |
+          curl https://github.com/dirkarnez/cpp-tools/raw/main/x86_64-8.1.0-release-posix-seh-rt_v6-rev0.7z -L -O -J &&^
+          7z.exe x x86_64-8.1.0-release-posix-seh-rt_v6-rev0.7z
+          
       - name: curl cmake-3.24.0-windows-x86_64.zip
         shell: cmd
         run: cd /d ${{ github.workspace }} && curl https://github.com/Kitware/CMake/releases/download/v3.24.0/cmake-3.24.0-windows-x86_64.zip -L --output cmake-3.24.0-windows-x86_64.zip && dir && 7z.exe x cmake-3.24.0-windows-x86_64.zip
@@ -42,20 +48,21 @@ jobs:
       - name: set PATH, check mingw version, cmake generate, build and install
         shell: msys2 {0}
         run: |
-            export PATH="${{ github.workspace }}/mingw64:${{ github.workspace }}/mingw64/bin:${{ github.workspace }}/cmake-3.24.0-windows-x86_64/bin:${{ github.workspace }}/msys64/usr/bin:/usr/bin" &&
-            cd mpfr-4.1.0 && g++ --version && ./configure mingw64 --enable-static --disable-shared --enable-thread-safe --enable-decimal-float --with-gmp-include="$(pwd)/../gmp-v6.2.1-x86_64-posix-seh-rev0-8.1.0/include" --with-gmp-lib="$(pwd)/../gmp-v6.2.1-x86_64-posix-seh-rev0-8.1.0/lib" --prefix="$(pwd)/${{ env.installationPath }}" &&
-            mingw32-make.exe install
-            
+          workspace=$(pwd) &&
+          export PATH="$workspace/mingw64:$workspace/mingw64/bin:$workspace/cmake-3.24.0-windows-x86_64/bin:$workspace/msys64/usr/bin:/usr/bin" &&
+          cd mpfr && g++ --version && ./configure mingw64 --enable-static --disable-shared --enable-thread-safe --enable-decimal-float --with-gmp-include="$(pwd)/../gmp-v6.2.1-x86_64-posix-seh-rev0-8.1.0/include" --with-gmp-lib="$(pwd)/../gmp-v6.2.1-x86_64-posix-seh-rev0-8.1.0/lib" --prefix="$(pwd)/${{ env.installationPath }}" &&
+          mingw32-make.exe install
+          
       - name: Archive Release
         uses: thedoctor0/zip-release@master
         with:
           type: 'zip'
-          directory: "${{ github.workspace }}/mpfr-4.1.0/${{ env.installationPath }}"
+          directory: "mpfr/${{ env.installationPath }}"
           filename: "${{ env.mingwTargetZip }}"
         
       - name: Release prebuilt
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "${{ github.workspace }}/mpfr-4.1.0/${{ env.installationPath }}/${{ env.mingwTargetZip }}"
+          artifacts: "mpfr/${{ env.installationPath }}/${{ env.mingwTargetZip }}"
           allowUpdates: true
           token: ${{ secrets.GITHUB_TOKEN }}
